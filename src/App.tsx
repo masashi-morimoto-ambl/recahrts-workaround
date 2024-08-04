@@ -1,5 +1,5 @@
 import './App.css'
-import React from 'react'
+import React, { useState } from 'react'
 import {
   ComposedChart,
   Line,
@@ -30,6 +30,8 @@ type Sample = {
   amt: number | null
   cnt: number | null
 }
+
+type DataKey = keyof Sample
 
 const data: Sample[] = [
   {
@@ -154,40 +156,73 @@ export default function App() {
     )
   }
 
-  const CustomTooltip = ({ active, payload, label }: MyTooltip<ValueType>) => {
-    if (active && payload) {
-      console.log(payload)
-      console.log(payload[1].dataKey)
-      return (
-        <>
-          <div className="custom-tooltip">
-            <p className="label">{label}</p>
-            <div className="box">
-              <p className="paybox"></p>
-              {`残高  ${payload[0].value}`}
-            </div>
+  const [currentLabel, setCurrentLabel] = useState('')
+  const [activeDataKey, setActiveDataKey] = useState<DataKey | ''>('')
 
-            {payload[1].payload?.pvy?.total && (
+  //ホバーしているCellのlabel名を取得する
+  const barOverEvent = (data: any) => {
+    const { dataKey } = data.tooltipPayload[0]
+    if (data) {
+      setCurrentLabel(data.name)
+      setActiveDataKey(dataKey)
+    }
+  }
+
+  const barLeaveEvent = () => {
+    setCurrentLabel('')
+    setActiveDataKey('')
+  }
+
+  const CustomTooltip = ({ active, payload, label }: MyTooltip<ValueType>) => {
+    if (active && payload && payload.length !== 0) {
+      if(currentLabel !== '') {
+        // 棒グラフホバー時
+        console.log({payload})
+        const hoverData = payload.find((data) => data.dataKey === activeDataKey)
+        return (
+          <>
+            <div className="custom-tooltip">
+              <p className="label">{label}</p>
               <div className="box">
                 <p className="paybox"></p>
-                {`出金  ${payload[1].payload.pvy.cart}`}
+                {`${hoverData?.name}  ${hoverData?.value?.toLocaleString()}`}
               </div>
-            )}
-            {/* <div className="box">
-              <p className="drawalbox"></p>
-              {`出金 ${payload[1]?.amt}`}
+              {/* {payload[1].payload?.pvy?.total && (
+                <div className="box">
+                  <p className="paybox"></p>
+                  {`出金  ${payload[1].payload.pvy.cart}`}
+                </div>
+              )} */}
+              {/* <div className="box">
+                <p className="drawalbox"></p>
+                {`出金 ${payload[1]?.amt}`}
+              </div>
+              <div className="box">
+                <p className="balancebox">
+                  <p className="balanceborder"></p>
+                </p>
+                {`${payload[2].uv}`}
+              </div> */}
             </div>
-            <div className="box">
-              <p className="balancebox">
-                <p className="balanceborder"></p>
-              </p>
-              {`${payload[2].uv}`}
-            </div> */}
-          </div>
-        </>
-      )
+          </>
+        )
+      } else {
+        // 棒グラフホバー時以外は折れ線グラフの値を表示する
+        const hoverData = payload.find((data) => data.dataKey === 'uv')
+        console.log({hoverData})
+        if(hoverData) {
+          return (
+            <div className="custom-tooltip">
+              <p className="label">{label}</p>
+              <div className="box">
+                <p className="paybox"></p>
+                {`${hoverData?.name}  ${hoverData?.value?.toLocaleString()}`}
+              </div>
+            </div>
+          )
+        }
+      }
     }
-
     return null
   }
 
@@ -236,7 +271,7 @@ export default function App() {
       <XAxis
         dataKey="name"
         xAxisId={0}
-        scale="band"
+        // scale="band"
         padding={{ left: 10, right: 10 }}
       />
       <XAxis dataKey="name" xAxisId={1} hide />
@@ -261,8 +296,7 @@ export default function App() {
         label={{ value: '残高', position: 'right' }}
         yAxisId={1}
       />
-      {/* <Tooltip filterNull={false} content={<CustomTooltip />} cursor={false} /> */}
-      <Tooltip filterNull={false} cursor={false} />
+      <Tooltip  content={<CustomTooltip />} cursor={false} isAnimationActive={false} />
       <Bar
         dataKey="pv"
         name="入金"
@@ -270,6 +304,8 @@ export default function App() {
         xAxisId={0}
         opacity={0.7}
         fill="rgba(83, 178, 231, 1)"
+        onMouseOver={barOverEvent}
+        onMouseLeave={barLeaveEvent}
       />
       <Bar
         dataKey="pvy.total"
@@ -278,7 +314,8 @@ export default function App() {
         fill="rgba(83, 178, 231, 1)"
         xAxisId={0}
         shape={<CandyBar />}
-
+        onMouseOver={barOverEvent}
+        onMouseLeave={barLeaveEvent}
         // background={<BackgroundRender />}
       />
       <Bar
@@ -287,6 +324,8 @@ export default function App() {
         xAxisId={0}
         name="出金"
         fill="rgba(241, 98, 124, 1)"
+        onMouseLeave={barLeaveEvent}
+        onMouseOver={barOverEvent}
       />
 
       <Line
