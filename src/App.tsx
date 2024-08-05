@@ -162,9 +162,11 @@ export default function App() {
   //ホバーしているCellのlabel名を取得する
   const barOverEvent = (data: any) => {
     const { dataKey } = data.tooltipPayload[0]
+    console.log({data})
     if (data) {
       setCurrentLabel(data.name)
       setActiveDataKey(dataKey)
+      setTooltipPosition({ x: data.x, y: data.y })
     }
   }
 
@@ -172,6 +174,8 @@ export default function App() {
     setCurrentLabel('')
     setActiveDataKey('')
   }
+
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 })
 
   const CustomTooltip = ({ active, payload, label }: MyTooltip<ValueType>) => {
     if (active && payload && payload.length !== 0) {
@@ -181,7 +185,7 @@ export default function App() {
         const hoverData = payload.find((data) => data.dataKey === activeDataKey)
         return (
           <>
-            <div className="custom-tooltip">
+            <div className="custom-tooltip" style={{backgroundColor: "#aaa"}} >
               <p className="label">{label}</p>
               <div className="box">
                 <p className="paybox"></p>
@@ -212,7 +216,7 @@ export default function App() {
         console.log({hoverData})
         if(hoverData) {
           return (
-            <div className="custom-tooltip">
+            <div className="custom-tooltip" style={{backgroundColor: "#aaa"}}>
               <p className="label">{label}</p>
               <div className="box">
                 <p className="paybox"></p>
@@ -296,7 +300,7 @@ export default function App() {
         label={{ value: '残高', position: 'right' }}
         yAxisId={1}
       />
-      <Tooltip  content={<CustomTooltip />} cursor={false} isAnimationActive={false} />
+      <Tooltip  content={<CustomTooltip />} cursor={false} isAnimationActive={false} position={tooltipPosition} />
       <Bar
         dataKey="pv"
         name="入金"
